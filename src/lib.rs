@@ -1,5 +1,9 @@
 #![no_std]
 
+use core::slice;
+
+pub struct Elf {}
+
 const ELF_HEADER_START_FLAG: u8 = 0x7f;
 const ELF_OFF1: u8 = 0x45;
 const ELF_OFF2: u8 = 0x4c;
@@ -11,80 +15,123 @@ pub struct Parser {
     datalen: isize,
 }
 
-const ELF_64: u8 = 2;
-const ELF_32: u8 = 1;
+#[repr(u8)]
+pub enum EIData {
+    Big = 2,
+    Little = 1,
+}
 
-const LITTLE_ENDIAN: u8 = 1;
-const BIG_ENDIAN: u8 = 2;
+#[repr(u8)]
+pub enum EIClass {
+    ELF64 = 2,
+    ELF32 = 1,
+}
 
-const ELF_V1: u8 = 1;
+#[repr(u8)]
+pub enum EIVersion {
+    V1 = 1,
+}
 
-const ELF_SYSTEM_V: u8 = 0x00;
-const ELF_HPUX: u8 = 0x01;
-const ELF_NETBSD: u8 = 0x02;
-const ELF_LINUX: u8 = 0x03;
-const ELF_GNU_HURD: u8 = 0x04;
-const ELF_SOLARIS: u8 = 0x06;
-const ELF_AIX: u8 = 0x07;
-const ELF_IRIX: u8 = 0x08;
-const ELF_FREEBSD : u8 = 0x09;
-const ELF_TRU64: u8 = 0x0A;
-const ELF_NOVELL_MODESTO: u8 = 0x0B;
-const ELF_OPENBSD: u8 = 0x0C;
-const ELF_OPENVMS: u8 = 0x0D;
-const ELF_NONSTOP_KERNEL: u8 = 0x0E;
-const ELF_AROS: u8 = 0x0F;
-const ELF_FENIXOS: u8 = 0x10;
-const ELF_NUXI_CLOUDABI: u8 = 0x11;
-const ELF_OPENVOS: u8 = 0x12;
+#[repr(u8)]
+pub enum EIOSABI {
+    ElfSysV = 0x00,
+    ElfHPUX = 0x01,
+    ElfNetBSD = 0x02,
+    ElfLinux = 0x03,
+    ElfGnuHurd = 0x04,
+    ElfSolaris = 0x06,
+    ElfAix = 0x07,
+    ElfIrix = 0x08,
+    ElfFreebsd = 0x09,
+    ElfTru64 = 0x0A,
+    ElfNovellModesto = 0x0B,
+    ElfOpenbsd = 0x0C,
+    ElfOpenvms = 0x0D,
+    ElfNonstopKernel = 0x0E,
+    ElfAros = 0x0F,
+    ElfFenixos = 0x10,
+    ElfNuxiCloudabi = 0x11,
+    ElfOpenvos = 0x12,
+}
 
-const ELF_ET_NONE: u16 = 0x00;
-const ELF_ET_REL: u16 = 0x01;
-const ELF_ET_EXEC: u16 = 0x02;
-const ELF_ET_DYN: u16 = 0x03;
-const ELF_ET_CORE: u16 = 0x04;
-const ELF_ET_LOOS: u16 = 0xFE00;
-const ELF_HIOS: u16 = 0xFEFF;
-const ELF_LOPROC: u16 = 0xFF00;
-const ELF_HIPROC: u16 = 0xFFFF;
+impl EIOSABI {}
+
+#[repr(u8)]
+pub enum EIABIVersion {
+    Version(u8),
+}
+
+#[repr(u8)]
+pub enum EIPad1 {
+    UnUsed(u8),
+}
+#[repr(u8)]
+pub enum EIPad2 {
+    UnUsed(u8),
+}
+#[repr(u8)]
+pub enum EIPad3 {
+    UnUsed(u8),
+}
+#[repr(u8)]
+pub enum EIPad4 {
+    UnUsed(u8),
+}
+#[repr(u8)]
+pub enum EIPad5 {
+    UnUsed(u8),
+}
+#[repr(u8)]
+pub enum EIPad6 {
+    UnUsed(u8),
+}
+
+#[repr(u8)]
+pub enum EIPad7 {
+    UnUsed(u8),
+}
 
 
-const ELF_NO_SPEC_ISA: u16 = 0x00;
-const ELF_ATT_WE_32100: u16 = 0x01;
-const ELF_SPARC: u16 = 0x02;
-const ELF_x86: u16 = 0x03;
-const ELF_M68K: u16 = 0x04;
-//... SO MUCH MORE 
-
-
-const ELF_V_ORIGINAL: u32 = 1;
+#[repr(u16)]
+pub enum EIType {
+    ETNone = 0x00,
+    ETRel = 0x01,
+    // TODO: Fill this out
+}
 
 pub struct ElfHeader {
-    bits: u8,
-    endianness: u8,
-    version: u8, 
-    abi: u8, 
-    abi_version: u8, 
-    e_type: u16, 
-    e_machine: u16, 
-    e_version: u32, 
-    e_entry: u32, 
-    e_phoff: u64, 
-    e_shoff: u64, 
-    e_flags: u32, 
-    e_ehsize: u16, 
-    e_phentsize: u16, 
-    e_phnum: u16, 
-    e_shentsize: u16, 
+    bits: EIClass,
+    endianness: EIData,
+    version: EIVersion,
+    abi: EIOSABI,
+    abi_version: EIABIVersion,
+    e_pad1: EIPad1,
+    e_pad2: EIPad2,
+    e_pad3: EIPad3,
+    e_pad4: EIPad4,
+    e_pad5: EIPad5,
+    e_pad6: EIPad6,
+    e_pad7: EIPad7,
+    e_type: u16,
+    e_machine: u16,
+    e_version: u32,
+    e_entry: u32,
+    e_phoff: u64,
+    e_shoff: u64,
+    e_flags: u32,
+    e_ehsize: u16,
+    e_phentsize: u16,
+    e_phnum: u16,
+    e_shentsize: u16,
     e_shnum: u16,
-    e_shstrndx: u16
-
+    e_shstrndx: u16,
 }
 
 pub enum ParserError {
     InvalidIndex,
     ExpectedError(u8, Option<u8>),
     OutOfData,
+    InvalidEndianness,
 }
 
 macro_rules! expect {
@@ -122,22 +169,24 @@ impl Parser {
         if self.index != 0 {
             return Err(ParserError::InvalidIndex);
         }
-
+        if self.datalen < 4 {}
+        let slice = unsafe { slice::from_raw_parts(self.data, 4) };
+        let expected: [u8; 4] = [0x7F, b'E', b'L', b'F'];
+        if slice != expected {}
+        self.index += 4;
         Ok(())
     }
 
-    /* fn parse_elf(&mut self) -> Result<Elf, ParserError> {
-        let magic_start = self.next_byte()?;
-        expect!(magic_start, ELF_HEADER_START_FLAG);
-        let off1 = self.next_byte()?;
-        expect!(off1, ELF_OFF1);
-        let off2 = self.next_byte()?;
-        expect!(off2, ELF_OFF2);
-        let off3 = self.next_byte()?;
-        expect!(off3, ELF_OFF3);
+    fn parse_elf(&mut self) -> Result<Elf, ParserError> {
+        self.parse_header()?;
+        let ei_class: u8 = match self.next_byte()? {
+            1 => 1,
+            2 => 2,
+            _ => return Err(ParserError::InvalidEndianness),
+        };
 
         unimplemented!()
-    } */
+    }
 }
 
 #[cfg(test)]
